@@ -7,7 +7,9 @@ import android.os.SystemClock
 import android.util.Log
 import ai.pleos.playground.navi.constants.NaviErrorCode
 import ai.pleos.playground.navi.data.DestinationArrivedInfo
+import ai.pleos.playground.navi.data.DestinationInfo
 import ai.pleos.playground.navi.data.DrivingInfo
+import ai.pleos.playground.navi.data.RouteStartInfo
 import ai.pleos.playground.navi.data.TripInfo
 import ai.pleos.playground.navi.helper.NaviHelper
 import ai.pleos.playground.navi.helper.listener.NaviHelperEventListener
@@ -37,7 +39,7 @@ data class Eta(val remainingMeters: Int?, val remainingSec: Int?, val source: Et
 
 /**
  * 목적지까지 남은 거리와 시간.
- *  1) NaviHelper SDK: onTripInfo(distance m, eta s), onDrivingInfo(destination.duration s)
+ *  1) NaviHelper SDK: onRouteStarted / onDrivingInfo / onDestinationInfo (남은 거리 m, 시간 s)
  *  2) 경로 안내 중이 아니면 테스트 주행: 고른 거리(기본 25km)를 평균 40km/h 로 달리는 것처럼 줄여 나감
  */
 class EtaProvider(context: Context) {
@@ -55,11 +57,20 @@ class EtaProvider(context: Context) {
     private var navi: NaviHelper? = null
 
     private val listener = object : NaviHelperEventListener {
-        override fun onTripInfo(tripInfo: TripInfo) {
-            main.post { onNavi(meters = tripInfo.distance, sec = tripInfo.eta) }
-        }
+        // requestTrip() 응답(전체 경로 요약)이라 남은 거리로 쓰지 않는다
+        override fun onTripInfo(tripInfo: TripInfo) = Unit
+        // 주행 중 주기적으로 오는 정보: 목적지까지 남은 거리(m)·시간(s)
         override fun onDrivingInfo(drivingInfo: DrivingInfo) {
-            main.post { onNavi(meters = null, sec = drivingInfo.destination.duration) }
+            val d = drivingInfo.destination
+            main.post { onNavi(meters = d.distance, sec = d.duration) }
+        }
+        // 경로 안내 시작 직후
+        override fun onRouteStarted(routeStartInfo: RouteStartInfo) {
+            main.post { onNavi(meters = routeStartInfo.distance, sec = routeStartInfo.duration) }
+        }
+        // getDestinationInfo() 응답 (앱이 안내 도중에 켜졌을 때)
+        override fun onDestinationInfo(destinationInfo: DestinationInfo) {
+            main.post { onNavi(meters = destinationInfo.remainDistance, sec = destinationInfo.remainTime) }
         }
         override fun onDestinationArrived(destinationArrivedInfo: DestinationArrivedInfo) {
             main.post { naviMeters = null; naviSec = null; tick() }
@@ -87,6 +98,7 @@ class EtaProvider(context: Context) {
                     main.post {
                         helper.addListener(listener)
                         runCatching { helper.getRouteStateInfo() }
+                        runCatching { helper.getDestinationInfo() }
                         navi = helper
                         Log.i(TAG, "NaviHelper connected")
                     }
