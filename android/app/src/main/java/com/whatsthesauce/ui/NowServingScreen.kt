@@ -5,7 +5,16 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.drawBehind
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -31,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -168,27 +178,56 @@ fun NowServingScreen(
     }
 }
 
-/** 짧게 = 재생/일시정지, 길게 = CREW에게 묻기. 핸들 재생 버튼과 같은 규칙. */
+/**
+ * 짧게 = 재생/일시정지, 길게(0.5초) = CREW에게 묻기. 핸들 재생 버튼과 같은 규칙.
+ * 누르고 있는 동안 버튼 테두리가 차오르고, 다 차면 바로 CREW 가 듣기 시작한다(손을 떼기 전).
+ */
 @Composable
 private fun PlayPauseButton(mode: Mode, onToggle: () -> Unit, onAsk: () -> Unit) {
     val playing = mode == Mode.PLAYING || mode == Mode.CREW_SPEAKING
     val shape = RoundedCornerShape(22.dp)
+    val hold = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
     Box(
         Modifier
             .size(96.dp, 72.dp)
             .clip(shape)
             .background(Sauce.Cherry)
             .border(1.5.dp, Sauce.Ink, shape)
-            .pointerInput(Unit) { detectTapGestures(onTap = { onToggle() }, onLongPress = { onAsk() }) }
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    awaitFirstDown(requireUnconsumed = false)
+                    val fill = scope.launch { hold.snapTo(0f); hold.animateTo(1f, tween(HOLD_MS.toInt(), easing = LinearEasing)) }
+                    // HOLD_MS 안에 손을 떼면 탭, 아니면 길게 누르기
+                    val up = withTimeoutOrNull(HOLD_MS) { waitForUpOrCancellation() }
+                    fill.cancel()
+                    if (up != null) {
+                        onToggle()
+                    } else {
+                        onAsk()
+                        // 손을 뗄 때까지 기다렸다가 다음 제스처로
+                        do { val e = awaitPointerEvent() } while (e.changes.any { it.pressed })
+                    }
+                    scope.launch { hold.snapTo(0f) }
+                }
+            }
+            .drawBehind {
+                // 길게 누르는 진행 표시: 버튼 아래쪽부터 청록색이 차오름
+                val h = size.height * hold.value
+                drawRect(Sauce.Teal, topLeft = Offset(0f, size.height - h), size = Size(size.width, h))
+            }
             .semantics {
                 contentDescription = if (playing) "일시정지 (길게 누르면 CREW에게 묻기)" else "재생 (길게 누르면 CREW에게 묻기)"
                 onLongClick(label = "CREW에게 묻기") { onAsk(); true }
             },
         contentAlignment = Alignment.Center,
     ) {
-        if (playing) PauseIcon(30.dp, Sauce.OnCherry) else PlayIcon(30.dp, Sauce.OnCherry)
+        if (hold.value > 0f) MicIcon(30.dp, Sauce.Ink)
+        else if (playing) PauseIcon(30.dp, Sauce.OnCherry) else PlayIcon(30.dp, Sauce.OnCherry)
     }
 }
+
+private const val HOLD_MS = 500L
 
 /** CREW 상태는 글자 대신 작은 표시 하나로만 */
 @Composable
@@ -197,10 +236,13 @@ private fun CrewStatus(mode: Mode) {
         Mode.LISTENING -> "듣는 중"
         Mode.THINKING -> "생각 중"
         Mode.CREW_SPEAKING -> "CREW"
-        else -> return
+        else -> "CREW" // 평소엔 연한 칩으로 계속 보여서 사라진 것처럼 보이지 않게
     }
+    val active = mode == Mode.LISTENING || mode == Mode.THINKING || mode == Mode.CREW_SPEAKING
     Row(
-        Modifier.clip(RoundedCornerShape(999.dp)).background(Sauce.Teal).padding(start = 6.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
+        Modifier.clip(RoundedCornerShape(999.dp)).background(if (active) Sauce.Teal else Sauce.Card)
+            .border(1.5.dp, if (active) Sauce.Teal else Sauce.Line, RoundedCornerShape(999.dp))
+            .alpha(if (active) 1f else 0.6f).padding(start = 6.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {

@@ -22,10 +22,17 @@ class SteeringKeys(private val player: StoryPlayer) {
 
     fun onPlayPauseKey(ev: KeyEvent) {
         when (ev.action) {
-            KeyEvent.ACTION_DOWN -> if (!down) {
-                down = true
-                longFired = false
-                main.postDelayed(longPress, LONG_PRESS_MS)
+            KeyEvent.ACTION_DOWN -> {
+                if (!down) {
+                    down = true
+                    longFired = false
+                    main.postDelayed(longPress, LONG_PRESS_MS)
+                }
+                // 시스템이 길게 누름으로 판정해서 보내 준 경우(반복 DOWN / FLAG_LONG_PRESS)엔 기다리지 않고 바로
+                if (!longFired && (ev.repeatCount > 0 || ev.isLongPress)) {
+                    main.removeCallbacks(longPress)
+                    longPress.run()
+                }
             }
             KeyEvent.ACTION_UP -> {
                 main.removeCallbacks(longPress)

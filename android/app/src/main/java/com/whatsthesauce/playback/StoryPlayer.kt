@@ -225,6 +225,7 @@ class StoryPlayer(
                 }
             },
             onError = { msg ->
+                _state.update { it.copy(notice = "CREW가 못 들었어요: $msg") }
                 crewSay(msg) {
                     if (wasPlaying) narrate() else _state.update { it.copy(mode = Mode.PAUSED) }
                 }
