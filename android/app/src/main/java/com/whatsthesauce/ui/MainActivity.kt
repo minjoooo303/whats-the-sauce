@@ -77,6 +77,7 @@ private fun App(vm: AppViewModel) {
     val lib by vm.library.collectAsStateWithLifecycle()
     val draft by vm.draft.collectAsStateWithLifecycle()
     val subs by vm.submissions.collectAsStateWithLifecycle()
+    val demoVoice by vm.demoVoice.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     LaunchedEffect(player.notice) {
@@ -91,6 +92,8 @@ private fun App(vm: AppViewModel) {
             val dist = eta.distanceLabel?.let { "남은 거리 $it" } ?: "목적지 미설정"
             if (eta.source == EtaSource.TEST) Tag("$dist · 테스트", onClick = vm::cycleTestDistance) else Tag(dist)
             Tag(if (driving) "주행 중" else "정차 중", bg = Sauce.Bg)
+            // 누를 때마다 대본 음성 ↔ 진짜 마이크
+            Tag(if (demoVoice) "음성 · 데모" else "음성 · 마이크", bg = if (demoVoice) Sauce.Teal else Sauce.Bg, onClick = vm::toggleDemoVoice)
         }
         Box(Modifier.weight(1f)) {
             when (tab) {

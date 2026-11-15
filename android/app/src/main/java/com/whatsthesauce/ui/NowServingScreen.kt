@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -154,7 +155,7 @@ fun NowServingScreen(
                 IconSquare("이전 사연", onPrev, size = 72.dp) { SkipIcon(false, 28.dp) }
                 PlayPauseButton(s.mode, onToggle, onAsk)
                 IconSquare("다음 사연", onNext, size = 72.dp) { SkipIcon(true, 28.dp) }
-                CrewStatus(s.mode)
+                CrewStatus(s.mode, s.partial)
             }
 
             if (s.mode == Mode.OFFER && s.offer != null) {
@@ -231,7 +232,7 @@ private const val HOLD_MS = 500L
 
 /** CREW 상태는 글자 대신 작은 표시 하나로만 */
 @Composable
-private fun CrewStatus(mode: Mode) {
+private fun CrewStatus(mode: Mode, heard: String = "") {
     val label = when (mode) {
         Mode.LISTENING -> "듣는 중"
         Mode.THINKING -> "생각 중"
@@ -251,7 +252,12 @@ private fun CrewStatus(mode: Mode) {
             modifier = Modifier.size(40.dp).clip(RoundedCornerShape(999.dp)).background(Sauce.Cream),
         )
         if (mode == Mode.LISTENING) MicIcon(22.dp)
-        Text(label, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        // 듣는 동안엔 받아쓴 말을 칩 안에 짧게 (질문이 들어갔는지 확인용)
+        Text(
+            if (mode == Mode.LISTENING && heard.isNotBlank()) "\u201C$heard\u201D" else label,
+            fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.widthIn(max = 320.dp),
+        )
     }
 }
 

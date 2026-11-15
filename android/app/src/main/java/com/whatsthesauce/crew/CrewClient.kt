@@ -98,6 +98,18 @@ object LocalCrew {
 
     fun answer(story: Story, heardUntil: Int, question: String): String {
         val heard = story.sentences.take(heardUntil + 1)
+        val last = heard.lastOrNull()?.trim().orEmpty()
+        val qq = question.replace(" ", "")
+        // 서버(LLM) 없이도 자주 나오는 질문은 자연스럽게 받아준다
+        when {
+            Regex("나라면|너라면|크루라면|어떻게했을|어떡했을").containsMatchIn(qq) ->
+                return "저라면요? 일단 해바라기씨 하나 까먹으면서 숨 한번 고르고 생각했을 거예요. ${story.sauce.label}맛 사연답게 끝까지 들어봐야 알겠죠?"
+            Regex("무슨뜻|무슨말|방금|다시말해|뭐라고").containsMatchIn(qq) && last.isNotEmpty() ->
+                return "방금 나온 부분은 이거예요. $last"
+            Regex("결국|어떻게됐|그다음|그래서|이후").containsMatchIn(qq) ->
+                return if (last.isNotEmpty()) "지금까지는 여기까지예요. $last 바로 다음에 이어지니까 조금만 더 들어봐요!"
+                else "이제 막 시작했어요. 조금만 들어보면 나와요!"
+        }
         val q = bigrams(question)
         val best = heard.maxByOrNull { (bigrams(it) intersect q).size }
         val score = best?.let { (bigrams(it) intersect q).size } ?: 0

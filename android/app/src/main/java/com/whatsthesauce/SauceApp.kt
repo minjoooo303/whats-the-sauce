@@ -16,6 +16,7 @@ import com.whatsthesauce.playback.SteeringKeys
 import com.whatsthesauce.playback.StoryPlayer
 import com.whatsthesauce.reco.Recommender
 import com.whatsthesauce.voice.SwitchingStt
+import com.whatsthesauce.voice.DemoStt
 import com.whatsthesauce.voice.SwitchingTts
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -56,10 +57,16 @@ class AppContainer(app: Application) {
             recommender.oneMore(mix.value, remainingSec, heard)
     }
 
+    /** 시연용 음성 입력. 디버그 빌드에선 처음부터 켜짐, 상단 "음성" 태그로 마이크와 전환 */
+    val demoStt = DemoStt(
+        SwitchingStt(app, BuildConfig.PLEOS_CLIENT_ID, BuildConfig.PLEOS_CLIENT_SECRET),
+        demoOnStart = BuildConfig.DEBUG,
+    )
+
     val player = StoryPlayer(
         context = app,
         tts = SwitchingTts(app, BuildConfig.PLEOS_CLIENT_ID, BuildConfig.PLEOS_CLIENT_SECRET),
-        stt = SwitchingStt(app, BuildConfig.PLEOS_CLIENT_ID, BuildConfig.PLEOS_CLIENT_SECRET),
+        stt = demoStt,
         crew = crew,
         library = library,
         planner = planner,

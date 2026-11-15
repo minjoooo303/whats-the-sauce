@@ -22,6 +22,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     val player = c.player.state
     val eta = c.eta.eta
+    /** 시연용 음성(대본 문장) 켜짐 여부 */
+    val demoVoice = c.demoStt.demo
+    fun toggleDemoVoice() = c.demoStt.toggleDemo()
     val driving = c.driving.restricted
     val mix: StateFlow<Flavor> = c.mix.asStateFlow()
     val library = c.library.state

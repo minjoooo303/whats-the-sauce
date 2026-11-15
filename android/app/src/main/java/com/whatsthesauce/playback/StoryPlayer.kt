@@ -209,6 +209,7 @@ class StoryPlayer(
         val resumeAt = s.sentence
         val heardUntil = (resumeAt).coerceAtMost(story.sentences.lastIndex)
         _state.update { it.copy(mode = Mode.LISTENING, partial = "") }
+        (stt as? com.whatsthesauce.voice.DemoStt)?.purpose = com.whatsthesauce.voice.ListenPurpose.ASK
         stt.listen(
             onPartial = { p -> _state.update { it.copy(partial = p) } },
             onResult = { q ->
@@ -239,6 +240,7 @@ class StoryPlayer(
         stopAudio()
         val before = _state.value.mode.takeIf { it != Mode.LISTENING && it != Mode.THINKING } ?: Mode.IDLE
         _state.update { it.copy(mode = Mode.LISTENING, partial = "") }
+        (stt as? com.whatsthesauce.voice.DemoStt)?.purpose = com.whatsthesauce.voice.ListenPurpose.ORDER
         stt.listen(
             onPartial = { p -> _state.update { it.copy(partial = p) } },
             onResult = { u ->
@@ -261,6 +263,7 @@ class StoryPlayer(
         stopAudio()
         val after = if (wasActive) Mode.PAUSED else _state.value.mode.takeIf { it != Mode.LISTENING && it != Mode.THINKING } ?: Mode.IDLE
         _state.update { it.copy(mode = Mode.LISTENING, partial = "") }
+        (stt as? com.whatsthesauce.voice.DemoStt)?.purpose = com.whatsthesauce.voice.ListenPurpose.DICTATE
         stt.listen(
             onPartial = { p -> _state.update { it.copy(partial = p) } },
             onResult = { text ->
@@ -294,6 +297,7 @@ class StoryPlayer(
     private fun listenForOfferReply() {
         stopAudio()
         _state.update { it.copy(mode = Mode.LISTENING, partial = "") }
+        (stt as? com.whatsthesauce.voice.DemoStt)?.purpose = com.whatsthesauce.voice.ListenPurpose.OFFER
         stt.listen(
             onPartial = { p -> _state.update { it.copy(partial = p) } },
             onResult = { u ->
