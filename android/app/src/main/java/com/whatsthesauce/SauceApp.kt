@@ -57,10 +57,10 @@ class AppContainer(app: Application) {
             recommender.oneMore(mix.value, remainingSec, heard)
     }
 
-    /** 시연용 음성 입력. 디버그 빌드에선 처음부터 켜짐, 상단 "음성" 태그로 마이크와 전환 */
+    /** 시연용 음성 입력. 에뮬레이터 마이크 없이도 체험되도록 처음부터 켜짐, 상단 "음성" 태그로 마이크와 전환 */
     val demoStt = DemoStt(
         SwitchingStt(app, BuildConfig.PLEOS_CLIENT_ID, BuildConfig.PLEOS_CLIENT_SECRET),
-        demoOnStart = BuildConfig.DEBUG,
+        demoOnStart = true,
     )
 
     val tts = SwitchingTts(app, BuildConfig.PLEOS_CLIENT_ID, BuildConfig.PLEOS_CLIENT_SECRET)

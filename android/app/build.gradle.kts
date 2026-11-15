@@ -35,6 +35,8 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            // 심사용 APK 가 별도 키 없이 바로 설치되도록 디버그 키로 서명
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
