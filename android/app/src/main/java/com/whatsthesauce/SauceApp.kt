@@ -28,6 +28,10 @@ class SauceApp : Application() {
     override fun onCreate() {
         super.onCreate()
         container = AppContainer(this)
+        // 시연 영상용 대사 파일 (디버그 빌드만, 3초 뒤 — 앱 TTS 엔진이 정해진 다음)
+        if (BuildConfig.DEBUG) android.os.Handler(mainLooper).postDelayed({
+            com.whatsthesauce.voice.VoiceExport.run(this) { container.tts.name }
+        }, 3000)
     }
 }
 
@@ -63,9 +67,11 @@ class AppContainer(app: Application) {
         demoOnStart = BuildConfig.DEBUG,
     )
 
+    val tts = SwitchingTts(app, BuildConfig.PLEOS_CLIENT_ID, BuildConfig.PLEOS_CLIENT_SECRET)
+
     val player = StoryPlayer(
         context = app,
-        tts = SwitchingTts(app, BuildConfig.PLEOS_CLIENT_ID, BuildConfig.PLEOS_CLIENT_SECRET),
+        tts = tts,
         stt = demoStt,
         crew = crew,
         library = library,
