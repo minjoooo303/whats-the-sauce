@@ -62,7 +62,10 @@ fun TopBar(onLogo: () -> Unit = {}, right: @Composable () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text("What's the Sauce?", Modifier.clickable(onClick = onLogo), fontFamily = LogoFont, fontSize = 40.sp, color = Sauce.Cherry)
+        Image(
+            painterResource(R.drawable.logo), contentDescription = "What's the Sauce?",
+            modifier = Modifier.height(66.dp).clickable(onClick = onLogo),
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) { right() }
     }
 }
