@@ -1,0 +1,16 @@
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+*.iml
+.DS_Store
+captures/
+.kotlin/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
