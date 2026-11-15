@@ -225,7 +225,7 @@ class SauceMediaService : MediaBrowserServiceCompat() {
     private fun notification(): Notification {
         val s = container.player.state.value
         return NotificationCompat.Builder(this, CHANNEL)
-            .setSmallIcon(R.drawable.crew_face)
+            .setSmallIcon(R.drawable.app_icon)
             .setContentTitle(s.current?.title ?: getString(R.string.app_name))
             .setContentText(s.current?.sauce?.label ?: "CREW")
             .setContentIntent(session.controller.sessionActivity)
