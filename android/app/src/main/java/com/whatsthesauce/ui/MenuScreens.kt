@@ -31,6 +31,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.alpha
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.Canvas
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.semantics.contentDescription
@@ -134,23 +144,51 @@ fun MixScreen(mix: Flavor, driving: Boolean, onChange: (Flavor) -> Unit, onApply
     }
 }
 
+/**
+ * 맛 슬라이더. 트랙 아무 곳이나 누르면 그 값으로 바로 바뀌고, 끌어도 된다(10 단위).
+ * (기본 Slider 는 에뮬레이터 마우스 클릭에서 값이 0 으로 튀는 경우가 있어 직접 만든다)
+ */
 @Composable
 private fun FlavorSlider(label: String, value: Int, enabled: Boolean, onChange: (Int) -> Unit) {
+    val latest by rememberUpdatedState(onChange)
     Row(Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(label, Modifier.width(84.dp), fontSize = 19.sp, fontWeight = FontWeight.Bold)
-        Slider(
-            value = value.toFloat(),
-            onValueChange = { onChange(it.toInt()) },
-            valueRange = 0f..100f,
-            steps = 9,
-            enabled = enabled,
-            modifier = Modifier.weight(1f),
-            colors = SliderDefaults.colors(
-                thumbColor = Sauce.Cherry,
-                activeTrackColor = Sauce.Cherry,
-                inactiveTrackColor = Sauce.Line,
-            ),
-        )
+        Canvas(
+            Modifier
+                .weight(1f)
+                .height(40.dp)
+                .alpha(if (enabled) 1f else 0.5f)
+                .pointerInput(enabled) {
+                    if (!enabled) return@pointerInput
+                    val pad = 12.dp.toPx()
+                    fun at(x: Float): Int {
+                        val f = ((x - pad) / (size.width - 2 * pad)).coerceIn(0f, 1f)
+                        return (Math.round(f * 10) * 10)
+                    }
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        latest(at(down.position.x))
+                        while (true) {
+                            val e = awaitPointerEvent()
+                            val c = e.changes.firstOrNull() ?: break
+                            if (!c.pressed) break
+                            latest(at(c.position.x))
+                            c.consume()
+                        }
+                    }
+                }
+                .semantics { contentDescription = "$label $value" },
+        ) {
+            val pad = 12.dp.toPx()
+            val w = size.width - 2 * pad
+            val cy = size.height / 2
+            val h = 10.dp.toPx()
+            val x = pad + w * value / 100f
+            drawRoundRect(Sauce.Line, Offset(pad, cy - h / 2), Size(w, h), CornerRadius(h / 2))
+            drawRoundRect(Sauce.Cherry, Offset(pad, cy - h / 2), Size(x - pad, h), CornerRadius(h / 2))
+            for (i in 0..10) drawCircle(if (i * 10 <= value) Sauce.Cream else Sauce.Cherry, 1.5.dp.toPx(), Offset(pad + w * i / 10f, cy))
+            drawRoundRect(Sauce.Cherry, Offset(x - 2.dp.toPx(), cy - 14.dp.toPx()), Size(4.dp.toPx(), 28.dp.toPx()), CornerRadius(2.dp.toPx()))
+        }
         Text("$value", Modifier.width(48.dp), fontSize = 19.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
     }
 }
