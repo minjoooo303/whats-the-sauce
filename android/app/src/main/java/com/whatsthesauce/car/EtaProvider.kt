@@ -62,7 +62,7 @@ class EtaProvider(context: Context) {
             main.post { onNavi(meters = null, sec = drivingInfo.destination.duration) }
         }
         override fun onDestinationArrived(destinationArrivedInfo: DestinationArrivedInfo) {
-            main.post { onNavi(meters = 0, sec = 0) }
+            main.post { naviMeters = null; naviSec = null; tick() }
         }
         override fun onRouteCancelled() {
             main.post { naviMeters = null; naviSec = null; tick() }
@@ -100,6 +100,8 @@ class EtaProvider(context: Context) {
     }
 
     private fun onNavi(meters: Int?, sec: Int?) {
+        // 안내 종료·도착 직후엔 0 이 들어온다 → 안내 없음으로 본다
+        if ((meters ?: 0) <= 0 && (sec ?: 0) <= 0) { naviMeters = null; naviSec = null; tick(); return }
         if (meters != null) naviMeters = meters.coerceAtLeast(0)
         if (sec != null) naviSec = sec.coerceAtLeast(0)
         naviAt = SystemClock.elapsedRealtime()
