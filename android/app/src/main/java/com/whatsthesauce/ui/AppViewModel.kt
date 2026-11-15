@@ -51,7 +51,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         // 남은 거리로 정한 편수가 바뀌면 추천 세트를 다시 짠다
         viewModelScope.launch {
             c.eta.eta.map { c.recommender.storiesFor(it.remainingMeters) }.distinctUntilChanged().collect {
-                if (!c.player.state.value.isActive) refresh()
+                if (!listening()) refresh()
             }
         }
         // 재생 중인 사연이 없을 때 CREW 키(핸들 재생 버튼 길게) → 음성 주문
@@ -60,6 +60,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun select(t: Tab) { _tab.value = t }
+
+    /** 세트를 듣는 중인지 (CREW 인사말 같은 짧은 말은 제외: 홈 화면 기준과 같음) */
+    private fun listening(): Boolean = c.player.state.value.let {
+        it.current != null && (it.isActive || it.mode == com.whatsthesauce.playback.Mode.PAUSED)
+    }
 
     private fun refresh(prefer: Sauce? = null) {
         _set.value = c.buildSet(c.mix.value, prefer)
@@ -98,7 +103,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (c.eta.eta.value.source != EtaSource.TEST) return
         testPreset = (testPreset + 1) % EtaProvider.TEST_PRESETS_KM.size
         c.eta.setTestKm(EtaProvider.TEST_PRESETS_KM[testPreset])
-        if (!c.player.state.value.isActive) refresh()
+        if (!listening()) refresh()
     }
 
     // 재생 버튼: 짧게 = 재생/일시정지, 길게 = CREW에게 묻기 (핸들 재생 키와 같은 규칙)
