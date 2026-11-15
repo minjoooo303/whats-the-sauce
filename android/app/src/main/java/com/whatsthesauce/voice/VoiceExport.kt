@@ -30,6 +30,22 @@ object VoiceExport {
         "I" to "다음 메뉴는 와사비 마요, 첫 드라이브스루에서 생긴 일.",
     )
 
+    /**
+     * 앱이 실제로 쓰는 TTS(engine)로 대사를 하나씩 소리 내어 읽는다. 사이에 2초 쉼.
+     * 에뮬레이터 화면 녹화로 앱 목소리만 깨끗하게 따로 녹음할 때 쓴다.
+     */
+    fun speakAll(engine: TtsEngine, gapMs: Long = 2000) {
+        val main = Handler(Looper.getMainLooper())
+        val items = LINES.entries.toList()
+        fun step(i: Int) {
+            if (i >= items.size) return
+            engine.speak(items[i].value,
+                onDone = { main.postDelayed({ step(i + 1) }, gapMs) },
+                onError = { main.postDelayed({ step(i + 1) }, gapMs) })
+        }
+        main.postDelayed({ step(0) }, 1500)
+    }
+
     fun run(context: Context, appEngineName: () -> String) {
         val dir = File(context.getExternalFilesDir(null), "voice").apply { mkdirs() }
         val main = Handler(Looper.getMainLooper())

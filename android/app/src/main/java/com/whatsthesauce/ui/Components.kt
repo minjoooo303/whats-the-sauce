@@ -56,13 +56,13 @@ enum class Tab(val label: String) {
 
 /** 위: 로고 + 상태 칩 (남은 거리, 주행 상태) */
 @Composable
-fun TopBar(right: @Composable () -> Unit) {
+fun TopBar(onLogo: () -> Unit = {}, right: @Composable () -> Unit) {
     Row(
         Modifier.fillMaxWidth().height(76.dp).padding(horizontal = 36.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text("What's the Sauce?", fontFamily = LogoFont, fontSize = 40.sp, color = Sauce.Cherry)
+        Text("What's the Sauce?", Modifier.clickable(onClick = onLogo), fontFamily = LogoFont, fontSize = 40.sp, color = Sauce.Cherry)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) { right() }
     }
 }

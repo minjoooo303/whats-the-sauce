@@ -88,7 +88,7 @@ private fun App(vm: AppViewModel) {
     }
 
     Column(Modifier.fillMaxSize().background(Sauce.Bg)) {
-        TopBar {
+        TopBar(onLogo = vm::speakDemoScript) {
             val dist = eta.distanceLabel?.let { "남은 거리 $it" } ?: "목적지 미설정"
             if (eta.source == EtaSource.TEST) Tag("$dist · 테스트", onClick = vm::cycleTestDistance) else Tag(dist)
             Tag(if (driving) "주행 중" else "정차 중", bg = Sauce.Bg)

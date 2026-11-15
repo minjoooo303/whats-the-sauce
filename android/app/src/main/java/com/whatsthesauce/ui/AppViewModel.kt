@@ -22,6 +22,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     val player = c.player.state
     val eta = c.eta.eta
+    /** 디버그: 로고를 누르면 시연 대사를 앱 목소리로 차례로 읽는다(따로 녹음용) */
+    fun speakDemoScript() { if (com.whatsthesauce.BuildConfig.DEBUG) com.whatsthesauce.voice.VoiceExport.speakAll(c.tts) }
+
     /** 시연용 음성(대본 문장) 켜짐 여부 */
     val demoVoice = c.demoStt.demo
     fun toggleDemoVoice() = c.demoStt.toggleDemo()
