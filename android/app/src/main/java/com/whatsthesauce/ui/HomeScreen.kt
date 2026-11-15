@@ -1,6 +1,10 @@
 package com.whatsthesauce.ui
 
 import androidx.compose.foundation.Image
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,6 +57,7 @@ fun HomeScreen(
     eta: Eta,
     onOrder: () -> Unit,
     onResume: () -> Unit,
+    onDistance: (() -> Unit)? = null,
 ) {
     val active = player.current != null && (player.isActive || player.mode == com.whatsthesauce.playback.Mode.PAUSED)
     val stories: List<Story> = if (active) player.queue else set.stories
@@ -86,15 +91,16 @@ fun HomeScreen(
 
         // 오른쪽: 세로로 긴 썰 리스트
         Column(Modifier.weight(0.42f).fillMaxHeight().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Column {
-                Text(if (active) "지금 드시는 세트" else "지금, 이 여정에 딱", fontSize = 28.sp, fontWeight = FontWeight.Black)
-                Text(
-                    "${set.type.takeIf { !active }?.label ?: player.setType?.label ?: ""} · " +
-                        (if (active) "남은 썰 ${remaining}편" else "${stories.size}편") +
-                        (eta.distanceLabel?.let { " · 남은 거리 $it" } ?: ""),
-                    fontSize = 17.sp, color = Sauce.Muted,
-                )
-            }
+            Text(if (active) "지금 드시는 세트" else "지금, 이 여정에 딱", fontSize = 28.sp, fontWeight = FontWeight.Black)
+            // 남은 거리 → 세트 크기: 이 앱의 핵심이라 크게 보여준다
+            DistanceToSet(
+                distance = eta.distanceLabel,
+                minutes = eta.minutes,
+                setLabel = (if (active) player.setType?.label else set.type.label) ?: "",
+                count = if (active) remaining else stories.size,
+                countLabel = if (active) "남은 썰" else "썰",
+                onClick = onDistance,
+            )
             OutlineCard(Modifier.fillMaxWidth().weight(1f)) {
                 LazyColumn {
                     itemsIndexed(stories, key = { i, s -> "$i-${s.id}" }) { i, s ->
@@ -130,6 +136,36 @@ fun HomeScreen(
                 BigButton("이 세트 듣기", onOrder, Modifier.fillMaxWidth(), height = 68.dp,
                     leading = { PlayIcon(22.dp, Sauce.OnCherry) })
             }
+        }
+    }
+}
+
+/** 남은 거리(크게) → 세트 이름 · 썰 개수. 테스트 모드에선 눌러서 거리를 바꿔볼 수 있다. */
+@Composable
+private fun DistanceToSet(
+    distance: String?, minutes: Int?, setLabel: String, count: Int, countLabel: String, onClick: (() -> Unit)?,
+) {
+    val shape = RoundedCornerShape(18.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(Sauce.Cream)
+            .border(1.5.dp, Sauce.Ink, shape)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Column {
+            Text("남은 거리", fontSize = 14.sp, color = Sauce.Muted, fontWeight = FontWeight.Bold)
+            Text(distance ?: "—", fontSize = 40.sp, lineHeight = 44.sp, fontWeight = FontWeight.Black, color = Sauce.Cherry)
+            minutes?.let { Text("약 ${it}분", fontSize = 14.sp, color = Sauce.Muted) }
+        }
+        Text("→", fontSize = 30.sp, fontWeight = FontWeight.Black)
+        Column(Modifier.weight(1f)) {
+            Text(setLabel, fontSize = 24.sp, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text("$countLabel ${count}편", fontSize = 18.sp, fontWeight = FontWeight.Bold)
         }
     }
 }

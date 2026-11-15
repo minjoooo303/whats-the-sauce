@@ -97,7 +97,8 @@ private fun App(vm: AppViewModel) {
         }
         Box(Modifier.weight(1f)) {
             when (tab) {
-                Tab.HOME -> HomeScreen(set, player, eta, vm::orderRecommended, onResume = { vm.select(Tab.NOW) })
+                Tab.HOME -> HomeScreen(set, player, eta, vm::orderRecommended, onResume = { vm.select(Tab.NOW) },
+                    onDistance = if (eta.source == EtaSource.TEST) vm::cycleTestDistance else null)
                 Tab.MENU -> SauceMenuScreen(vm.stories, vm::pickSauce)
                 Tab.MIX -> MixScreen(mix, driving, vm::setMix, vm::applyMix)
                 Tab.NOW -> NowServingScreen(
