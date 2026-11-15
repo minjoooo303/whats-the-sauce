@@ -25,7 +25,14 @@ data class Eta(val remainingMeters: Int?, val remainingSec: Int?, val source: Et
 
     /** "12km" / "800m" */
     val distanceLabel: String?
-        get() = remainingMeters?.let { if (it >= 1000) "${(it / 1000.0).roundToInt()}km" else "${(it / 100) * 100}m" }
+        // 내비와 같은 표기: 10km 미만은 소수 첫째 자리(7.6km), 그 이상은 정수, 1km 미만은 m
+        get() = remainingMeters?.let {
+            when {
+                it >= 10_000 -> "${(it / 1000.0).roundToInt()}km"
+                it >= 1000 -> "%.1fkm".format(it / 1000.0)
+                else -> "${(it / 10) * 10}m"
+            }
+        }
 }
 
 /**
@@ -100,17 +107,15 @@ class EtaProvider(context: Context) {
     }
 
     private fun tick() {
-        val now = SystemClock.elapsedRealtime()
-        val fresh = now - naviAt < NAVI_STALE_MS
         val ns = naviSec
-        _eta.value = if (fresh && (ns != null || naviMeters != null)) {
-            val elapsed = ((now - naviAt) / 1000).toInt()
-            val sec = ns?.let { (it - elapsed).coerceAtLeast(0) }
-            // 거리를 모르면 시간 × 평균 속도로 추정
-            val meters = naviMeters?.let { m -> (m - elapsed * AVG_MPS).toInt().coerceAtLeast(0) }
-                ?: sec?.let { (it * AVG_MPS).toInt() }
-            Eta(meters, sec ?: meters?.let { (it / AVG_MPS).toInt() }, EtaSource.NAVI)
+        val nm = naviMeters
+        _eta.value = if (ns != null || nm != null) {
+            // 내비 안내 중: 내비가 준 값을 그대로 쓴다(차가 서 있으면 줄지 않음).
+            // 경로 취소·도착 이벤트가 오기 전까지는 마지막 값을 유지한다.
+            val meters = nm ?: ns?.let { (it * AVG_MPS).toInt() }
+            Eta(meters, ns ?: meters?.let { (it / AVG_MPS).toInt() }, EtaSource.NAVI)
         } else {
+            val now = SystemClock.elapsedRealtime()
             val driven = ((now - testStartAt) / 1000.0) * AVG_MPS
             testEta((testStartMeters - driven).toInt().coerceAtLeast(0))
         }
@@ -136,7 +141,6 @@ class EtaProvider(context: Context) {
         const val DEFAULT_TEST_KM = 25
         /** 평균 40km/h */
         const val AVG_MPS = 40_000.0 / 3600.0
-        private const val NAVI_STALE_MS = 120_000L
         val TEST_PRESETS_KM = listOf(4, 12, 25, 45)
     }
 }
