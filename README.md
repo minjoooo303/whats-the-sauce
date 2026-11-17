@@ -92,12 +92,12 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 | 화면 | 메뉴는 아래 가운데, 지금 화면은 케첩 자국으로 표시. Home·Now Serving 에 CREW 자막 없음 (소리로만) |
 | 차량 미디어 연동 | `MediaBrowserServiceCompat` + `MediaSessionCompat` — 스티어링 휠 키, 미디어 ID·검색 재생, 브라우즈 트리, 오디오 포커스, 자동 재생 없음 |
 
-### 핸들 버튼 메모
+### 핸들 버튼
 - 대부분의 AAOS 차량에서 **음성(PTT) 버튼은 시스템 음성 비서(Gleo AI)가 먼저 가져가서** 일반 앱에 전달되지 않는다. 그래서 앱이 확실히 받을 수 있는 **재생/일시정지 키 길게 누르기**를 CREW 호출로 썼다. PTT 키가 앱까지 오는 차량이면 그 키도 바로 CREW 호출로 동작하게 해 두었다.
 - 정식으로 핸들 음성 버튼 → Gleo AI → 앱 기능 호출을 하려면 Pleos App Schema(App Capability)에 기능을 등록해야 한다 (향후 과제).
 - 에뮬레이터에서 테스트: `adb shell input keyevent --longpress KEYCODE_MEDIA_PLAY_PAUSE` 또는 화면 재생 버튼을 길게 누르기.
 
-### 동작 방식 메모
+### 동작 방식
 - **사연 낭독**은 사전 녹음 파일 대신 TTS 로 문장 단위 낭독한다. 그래서 대화 후 "이전 재생 위치"가 문장 단위로 정확히 복귀된다. 사전 생성 음성 파일로 바꾸려면 `StoryPlayer.narrate()` 만 교체하면 된다.
 - Pleos STT/TTS 초기화에 실패하면(일반 AAOS 에뮬레이터 등) 안드로이드 기본 TTS / SpeechRecognizer 로 자동 전환한다.
 - 백엔드에 닿지 않으면 CREW 는 앱 내장 규칙(`crew/LocalCrew`)으로 답한다. 사연 중 질문은 "지금까지 들은 문장" 중 가장 관련 있는 문장을 근거로 답한다.
